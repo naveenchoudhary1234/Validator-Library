@@ -1,13 +1,35 @@
-use crate::error::ValidationError;
 use std::fmt;
 use std::str::FromStr;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use crate::error::ValidationError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ByteSize(pub u64);
 
 impl ByteSize {
     pub fn bytes(self) -> u64 {
-        self.0 // tuple first value extract karna
+        self.0
+    }
+}
+
+// Serialize — ByteSize ko string mein convert karo
+impl Serialize for ByteSize {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+// Deserialize — string se ByteSize banao
+impl<'de> Deserialize<'de> for ByteSize {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        s.parse::<ByteSize>().map_err(serde::de::Error::custom)
     }
 }
 
@@ -24,13 +46,12 @@ impl FromStr for ByteSize {
 
         let s_upper = s.to_uppercase();
 
-        // Find where digits end and suffix begins
-        let split_pos = s_upper.find(|c: char| c.is_alphabetic()).ok_or_else(|| {
-            ValidationError::InvalidByteSize {
+        let split_pos = s_upper
+            .find(|c: char| c.is_alphabetic())
+            .ok_or_else(|| ValidationError::InvalidByteSize {
                 input: s.to_string(),
                 reason: "missing unit suffix (B, K, M, G, T)".to_string(),
-            }
-        })?;
+            })?;
 
         if split_pos == 0 {
             return Err(ValidationError::InvalidByteSize {
@@ -42,12 +63,10 @@ impl FromStr for ByteSize {
         let number_part = &s_upper[..split_pos];
         let suffix_part = &s_upper[split_pos..];
 
-        let number: u64 = number_part
-            .parse()
-            .map_err(|_| ValidationError::InvalidByteSize {
-                input: s.to_string(),
-                reason: format!("'{}' is not a valid positive integer", number_part),
-            })?;
+        let number: u64 = number_part.parse().map_err(|_| ValidationError::InvalidByteSize {
+            input: s.to_string(),
+            reason: format!("'{}' is not a valid positive integer", number_part),
+        })?;
 
         if number == 0 {
             return Err(ValidationError::InvalidByteSize {
@@ -131,5 +150,18 @@ mod tests {
         assert_eq!(format!("{}", "100G".parse::<ByteSize>().unwrap()), "100G");
         assert_eq!(format!("{}", "512M".parse::<ByteSize>().unwrap()), "512M");
         assert_eq!(format!("{}", "1T".parse::<ByteSize>().unwrap()), "1T");
+    }
+
+    #[test]
+    fn test_serde_serialize() {
+        let size: ByteSize = "100G".parse().unwrap();
+        let json = serde_json::to_string(&size).unwrap();
+        assert_eq!(json, "\"100G\"");
+    }
+
+    #[test]
+    fn test_serde_deserialize() {
+        let size: ByteSize = serde_json::from_str("\"100G\"").unwrap();
+        assert_eq!(size.0, 100 * 1_073_741_824);
     }
 }

@@ -1,4 +1,6 @@
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HostRole {
     Manager,
     Storage,
@@ -6,7 +8,7 @@ pub enum HostRole {
     Gateway,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Host {
     pub hostname: String,
     pub ip_address: String,
