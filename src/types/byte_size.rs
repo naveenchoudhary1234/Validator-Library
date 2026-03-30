@@ -165,3 +165,45 @@ mod tests {
         assert_eq!(size.0, 100 * 1_073_741_824);
     }
 }
+// existing tests upar hain...
+
+#[cfg(test)]
+mod proptests {
+    use super::*;
+    use proptest::prelude::*;
+
+    // Valid suffixes ke saath random numbers test karo
+    proptest! {
+        #[test]
+        fn test_valid_byte_sizes(
+            n in 1u64..=1000u64,  // 1 se 1000 tak random number
+            suffix in proptest::sample::select(
+                vec!["B", "K", "M", "G", "T"]
+            )
+        ) {
+            let input = format!("{}{}", n, suffix);
+            // valid input — parse hona chahiye
+            prop_assert!(input.parse::<ByteSize>().is_ok());
+        }
+
+        #[test]
+        fn test_display_roundtrip(n in 1u64..=1000u64) {
+            // ByteSize banao → Display → parse → same hona chahiye
+            let original = ByteSize(n * 1_048_576); // M mein
+            let displayed = original.to_string();   // "XM"
+            let parsed = displayed.parse::<ByteSize>().unwrap();
+            prop_assert_eq!(original, parsed);      // same hona chahiye!
+        }
+
+        #[test]
+        fn test_zero_always_invalid(
+            suffix in proptest::sample::select(
+                vec!["B", "K", "M", "G", "T"]
+            )
+        ) {
+            let input = format!("0{}", suffix);
+            // "0G", "0M" etc — hamesha invalid
+            prop_assert!(input.parse::<ByteSize>().is_err());
+        }
+    }
+}
