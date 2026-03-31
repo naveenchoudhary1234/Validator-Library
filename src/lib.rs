@@ -3,6 +3,7 @@ pub mod config;
 pub mod error;
 pub mod types;
 pub mod validation;
+pub mod parser; 
 
 pub use builder::{
     FilesystemBuilder, HostBuilder, NetworkInterfaceBuilder, ServerConfigBuilder,

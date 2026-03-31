@@ -1,0 +1,28 @@
+name = "production-cluster"
+
+[[hosts]]
+hostname = "manager-01"
+ip_address = "192.168.1.10"
+role = "Manager"
+enabled = true
+
+[[hosts]]
+hostname = "storage-01"
+ip_address = "192.168.1.11"
+role = "Storage"
+enabled = true
+
+[storage]
+default_size = "512M"
+
+[[storage.filesystems]]
+name = "data_fs"
+mount_point = "/mnt/data"
+size = "100G"
+
+[network]
+
+[[network.interfaces]]
+name = "eth0"
+network_type = "Ethernet"
+speed_gbps = 10

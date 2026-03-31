@@ -3,6 +3,9 @@ use config_validator::{
     NetworkType, ServerConfigBuilder,
 };
 
+use config_validator::parser::parse_toml_file;
+use config_validator::validation::Validate;
+
 fn main() {
     println!("=== Builder Pattern Demo ===\n");
 
@@ -72,5 +75,16 @@ fn main() {
     match bad {
         Ok(_) => println!("✅ Host built"),
         Err(e) => eprintln!("❌ Host build failed: {}", e),
+    }
+
+      match parse_toml_file("config.toml") {
+        Ok(config) => {
+            println!("✅ TOML parsed successfully!");
+            match config.validate() {
+                Ok(()) => println!("✅ Config is valid!"),
+                Err(e) => eprintln!("❌ Validation failed:\n{}", e),
+            }
+        }
+        Err(e) => eprintln!("❌ Failed to parse: {}", e),
     }
 }
